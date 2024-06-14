@@ -11,7 +11,7 @@ class AppController {
 
   static getStats(req, res) {
     Promise.all([dbClient.nbUsers(), dbClient.nbFiles()])
-      .then((nbusers, nbfiles) => {
+      .then(([nbusers, nbfiles]) => {
         res.json({ users: nbusers, files: nbfiles });
       })
       .catch((error) => {

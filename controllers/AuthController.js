@@ -1,7 +1,7 @@
 import dbClient from "../utils/db";
 import redisClient from "../utils/redis";
 import sha1 from "sha1";
-import uuidv4 from "uuid/v4";
+import { v4 as uuidv4 } from 'uuid';
 
 function base64decode(str) {
   // base64 to utf-8 string

@@ -3,6 +3,8 @@ import redisClient from '../utils/redis';
 import { ObjectId } from 'mongodb';
 import { v4 as uuidv4 } from 'uuid';
 import fs from 'fs';
+import path from 'path';
+
 
 class FilesController {
   static async postUpload(req, res) {
@@ -43,22 +45,28 @@ class FilesController {
       userId: ObjectId(userId),
       name,
       type,
+      isPublic,
       parentId: parentId === '0' ? '0' : ObjectId(parentId),
-      isPublic
     };
 
+    let localPath = null;
     if (type !== 'folder') {
       const folderPath = process.env.FOLDER_PATH || '/tmp/files_manager';
       if (!fs.existsSync(folderPath)) {
         fs.mkdirSync(folderPath, { recursive: true });
       }
-      const localPath = path.join(folderPath, uuidv4());
+      localPath = path.join(folderPath, uuidv4());
       fs.writeFileSync(localPath, Buffer.from(data, 'base64'));
-      newFile.localPath = localPath;
     }
 
     const result = await dbClient.db.collection('files').insertOne(newFile);
-    newFile.id = result.insertedId;
+
+    const responseFile = {
+      id: result.insertedId.toString(),
+      ...newFile,
+      ...(localPath && { localPath }),
+    }
+
     return res.status(201).send(newFile);
   }
 }

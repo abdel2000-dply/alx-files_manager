@@ -13,14 +13,15 @@ class DBClient {
       useNewUrlParser: true,
       useUnifiedTopology: true,
     });
-    this.client.connect()
-    .then(() => {
-      this.db = this.client.db(database);
-      this.connected = true;
-    })
-    .catch((error) => {
-      console.log('MongoDB connection error:', error);
-    });
+    this.client
+      .connect()
+      .then(() => {
+        this.db = this.client.db(database);
+        this.connected = true;
+      })
+      .catch((error) => {
+        console.log('MongoDB connection error:', error);
+      });
   }
 
   isAlive() {
@@ -32,6 +33,7 @@ class DBClient {
     // return the number of documents in the collection users
     return this.db.collection('users').countDocuments();
   }
+
   async nbFiles() {
     // return the number of documents in the collection files
     return this.db.collection('files').countDocuments();

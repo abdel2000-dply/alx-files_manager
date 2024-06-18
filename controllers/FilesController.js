@@ -56,18 +56,19 @@ class FilesController {
       }
       localPath = path.join(folderPath, uuidv4());
       fs.writeFileSync(localPath, Buffer.from(data, 'base64'));
+      newFile.localPath = localPath;
     }
 
     const result = await dbClient.db.collection('files').insertOne(newFile);
 
     const responseFile = {
       id: result.insertedId.toString(),
-      ...newFile,
-      ...(localPath && { localPath })
+      ...newFile
     };
     // Fix the responsefile with id instead of _id and structure | maybe this will pass the checker
+    delete responseFile._id;
 
-    return res.status(201).send(newFile);
+    return res.status(201).send(responseFile);
   }
 
   static async getShow(req, res) {
@@ -94,7 +95,12 @@ class FilesController {
       return res.status(404).send({ error: 'Not found' });
     }
 
-    return res.send({ ...file });
+    const responseFile = {
+      id: file._id.toString(),
+      ...file
+    };
+    delete responseFile._id;
+    return res.send(responseFile);
   }
 
   // got image.png with no parentId so we couldn't test
@@ -123,7 +129,7 @@ class FilesController {
       .toArray();
 
     const responseFiles = files.map((file) => ({
-      id: file._id,
+      id: file._id.toString(),
       userId: file.userId,
       name: file.name,
       type: file.type,
@@ -133,6 +139,86 @@ class FilesController {
 
     return res.send(responseFiles);
   }
+
+  static async putPublish(req, res) {
+    const token = req.header('X-Token');
+    if (!token) {
+      return res.status(401).send({ error: 'Unauthorized' });
+    }
+
+    const userId = await redisClient.get(`auth_${token}`);
+    if (!userId) {
+      return res.status(401).send({ error: 'Unauthorized' });
+    }
+
+    const fileId = req.params.id;
+    if (!ObjectId.isValid(fileId)) {
+      return res.status(404).send({ error: 'Not found' });
+    }
+
+    const file = await dbClient.db
+      .collection('files')
+      .findOneAndUpdate(
+        { _id: ObjectId(fileId), userId: ObjectId(userId) },
+        { $set: { isPublic: true } }
+      );
+
+    if (!file.value) {
+      return res.status(404).send({ error: 'Not found' });
+    }
+
+    const responseFile = {
+      id: file.value._id,
+      userId: file.value.userId,
+      name: file.value.name,
+      type: file.value.type,
+      isPublic: file.value.isPublic,
+      parentId: file.value.parentId
+    };
+
+    return res.send(responseFile);
+  }
+
+  static async putUnpublish(req, res) {
+    const token = req.header('X-Token');
+    if (!token) {
+      return res.status(401).send({ error: 'Unauthorized' });
+    }
+
+    const userId = await redisClient.get(`auth_${token}`);
+    if (!userId) {
+      return res.status(401).send({ error: 'Unauthorized' });
+    }
+
+    const fileId = req.params.id;
+    if (!ObjectId.isValid(fileId)) {
+      return res.status(404).send({ error: 'Not found' });
+    }
+
+    const file = await dbClient.db
+      .collection('files')
+      .findOneAndUpdate(
+        { _id: ObjectId(fileId), userId: ObjectId(userId) },
+        { $set: { isPublic: false } }
+      );
+
+    if (!file.value) {
+      return res.status(404).send({ error: 'Not found' });
+    }
+
+    const responseFile = {
+      id: file.value._id,
+      userId: file.value.userId,
+      name: file.value.name,
+      type: file.value.type,
+      isPublic: file.value.isPublic,
+      parentId: file.value.parentId
+    };
+
+    return res.send(responseFile);
+  }
+
+  static async getFile(req, res) {}
 }
 
 export default FilesController;

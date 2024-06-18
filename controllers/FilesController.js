@@ -1,10 +1,10 @@
-import dbClient from '../utils/db';
-import redisClient from '../utils/redis';
 import { ObjectId } from 'mongodb';
 import { v4 as uuidv4 } from 'uuid';
 import fs from 'fs';
 import path from 'path';
-import mime from 'mine-types';
+import mime from 'mime-types';
+import dbClient from '../utils/db';
+import redisClient from '../utils/redis';
 
 class FilesController {
   static async postUpload(req, res) {
@@ -46,7 +46,7 @@ class FilesController {
       name,
       type,
       isPublic,
-      parentId: parentId === '0' ? '0' : ObjectId(parentId)
+      parentId: parentId === '0' ? '0' : ObjectId(parentId),
     };
 
     let localPath = null;
@@ -64,7 +64,7 @@ class FilesController {
 
     const responseFile = {
       id: result.insertedId.toString(),
-      ...newFile
+      ...newFile,
     };
     // Fix the responsefile with id instead of _id and structure | maybe this will pass the checker
     delete responseFile._id;
@@ -99,7 +99,7 @@ class FilesController {
     // fix this and remove ...file
     const responseFile = {
       id: file._id.toString(),
-      ...file
+      ...file,
     };
     delete responseFile._id;
     return res.send(responseFile);
@@ -117,7 +117,7 @@ class FilesController {
     }
 
     const parentId = req.query.parentId || '0';
-    const page = parseInt(req.query.page) || 0;
+    const page = parseInt(req.query.page, 10) || 0;
     const pageSize = 20;
     const step = page * pageSize;
 
@@ -134,7 +134,7 @@ class FilesController {
       name: file.name,
       type: file.type,
       isPublic: file.isPublic,
-      parentId: file.parentId
+      parentId: file.parentId,
     }));
 
     return res.send(responseFiles);
@@ -160,7 +160,7 @@ class FilesController {
       .collection('files')
       .findOneAndUpdate(
         { _id: ObjectId(fileId), userId: ObjectId(userId) },
-        { $set: { isPublic: true } }
+        { $set: { isPublic: true } },
       );
 
     if (!file.value) {
@@ -173,7 +173,7 @@ class FilesController {
       name: file.value.name,
       type: file.value.type,
       isPublic: file.value.isPublic,
-      parentId: file.value.parentId
+      parentId: file.value.parentId,
     };
 
     return res.send(responseFile);
@@ -199,7 +199,7 @@ class FilesController {
       .collection('files')
       .findOneAndUpdate(
         { _id: ObjectId(fileId), userId: ObjectId(userId) },
-        { $set: { isPublic: false } }
+        { $set: { isPublic: false } },
       );
 
     if (!file.value) {
@@ -212,7 +212,7 @@ class FilesController {
       name: file.value.name,
       type: file.value.type,
       isPublic: file.value.isPublic,
-      parentId: file.value.parentId
+      parentId: file.value.parentId,
     };
 
     return res.send(responseFile);
@@ -250,7 +250,7 @@ class FilesController {
 
     const filePath = path.join(
       process.env.FOLDER_PATH || '/tmp/files_manager',
-      file.localPath
+      file.localPath,
     );
     if (!fs.existsSync(filePath)) {
       return res.status(404).send({ error: 'Not found' });

@@ -4,6 +4,7 @@ import { ObjectId } from 'mongodb';
 import { v4 as uuidv4 } from 'uuid';
 import fs from 'fs';
 import path from 'path';
+import mime from 'mine-types';
 
 class FilesController {
   static async postUpload(req, res) {
@@ -90,11 +91,12 @@ class FilesController {
     const file = await dbClient.db
       .collection('files')
       .findOne({ _id: ObjectId(fileId), userId: ObjectId(userId) });
-    // remember to adjust _id to id
+
     if (!file) {
       return res.status(404).send({ error: 'Not found' });
     }
 
+    // fix this and remove ...file
     const responseFile = {
       id: file._id.toString(),
       ...file
@@ -103,8 +105,6 @@ class FilesController {
     return res.send(responseFile);
   }
 
-  // got image.png with no parentId so we couldn't test
-  // must be fixed
   static async getIndex(req, res) {
     const token = req.header('X-Token');
     if (!token) {
@@ -218,7 +218,50 @@ class FilesController {
     return res.send(responseFile);
   }
 
-  static async getFile(req, res) {}
+  static async getFile(req, res) {
+    const fileId = req.params.id;
+    if (!ObjectId.isValid(fileId)) {
+      return res.status(404).send({ error: 'Not found' });
+    }
+
+    const file = await dbClient.db
+      .collection('files')
+      .findOne({ _id: ObjectId(fileId) });
+    if (!file) {
+      return res.status(404).send({ error: 'Not found' });
+    }
+
+    if (file.type === 'folder') {
+      return res.status(400).send({ error: "A folder doesn't have content" });
+    }
+
+    const token = req.header('X-Token');
+    if (!token) {
+      return res.status(401).send({ error: 'Unauthorized' });
+    }
+
+    const userId = await redisClient.get(`auth_${token}`);
+
+    if (!file.isPublic) {
+      if (!userId || userId !== file.userId.toString()) {
+        return res.status(404).send({ error: 'Not found' });
+      }
+    }
+
+    const filePath = path.join(
+      process.env.FOLDER_PATH || '/tmp/files_manager',
+      file.localPath
+    );
+    if (!fs.existsSync(filePath)) {
+      return res.status(404).send({ error: 'Not found' });
+    }
+
+    const mimeType = mime.lookup(file.name) || 'application/octet-stream';
+    res.setHeader('Content-Type', mimeType);
+
+    const fileContent = fs.readFileSync(filePath);
+    return res.status(200).send(fileContent);
+  }
 }
 
 export default FilesController;

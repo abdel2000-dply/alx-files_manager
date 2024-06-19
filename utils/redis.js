@@ -10,10 +10,10 @@ class RedisClient {
       this.isConnected = false;
     });
 
-    this.getAsync = promisify(this.client.get).bind(this.client)
-    this.setAsync = promisify(this.client.set).bind(this.client)
-    this.delAsync = promisify(this.client.del).bind(this.client)
-  
+    this.getAsync = promisify(this.client.get).bind(this.client);
+    this.setAsync = promisify(this.client.set).bind(this.client);
+    this.delAsync = promisify(this.client.del).bind(this.client);
+
     this.client.on('connect', () => {
       this.isConnected = true;
     });
@@ -24,13 +24,15 @@ class RedisClient {
   }
 
   async get(key) {
-    return this.getAsync(key)
+    return this.getAsync(key);
   }
+
   async set(key, value, duration) {
-    await this.setAsync(key, value, 'EX', duration)
+    await this.setAsync(key, value, 'EX', duration);
   }
+
   async del(key) {
-    await this.delAsync(key)
+    await this.delAsync(key);
   }
 }
 

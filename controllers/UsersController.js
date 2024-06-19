@@ -1,6 +1,6 @@
-import dbClient from '../utils/db';
 import { ObjectId } from 'mongodb';
 import sha1 from 'sha1';
+import dbClient from '../utils/db';
 import redisClient from '../utils/redis';
 
 class UsersController {
@@ -23,8 +23,8 @@ class UsersController {
 
     const newUser = await dbClient.db
       .collection('users')
-      .insertOne({ email: email, password: hashedPassword });
-    return res.status(201).send({ id: newUser.insertedId, email: email });
+      .insertOne({ email, password: hashedPassword });
+    return res.status(201).send({ id: newUser.insertedId, email });
   }
 
   static async getMe(req, res) {

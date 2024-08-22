@@ -1,6 +1,6 @@
 # ALX File Manager
 
-This project is a comprehensive summary of the back-end trimester in the ALX Software Engineering program, focusing on key concepts such as authentication, NodeJS, MongoDB, Redis, pagination, and background processing. The objective is to build a simple platform that allows users to upload and view files.
+A backend application developed with Node.js, MongoDB, and Redis, enabling users to securely upload, manage, and view files. The project features user authentication using Basic Auth, file permission controls
 
 ## Features
 

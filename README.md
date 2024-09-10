@@ -18,3 +18,5 @@ A backend application developed with Node.js, MongoDB, and Redis, enabling users
 - Store data in MongoDB.
 - Store temporary data in Redis.
 - Set up and use a background worker for processing tasks.
+
+##
